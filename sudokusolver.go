@@ -26,6 +26,7 @@ const (
 	xDim            = 9         // Max X dimension of puzzle.
 	yDim            = 9         // Max Y dimension of puzzle.
 
+	debug = false
 )
 
 // The solve can finish in various ways
@@ -152,13 +153,11 @@ func (puz *Puzzle) getAllLegalMoves(theGameState GameState) int {
 
 	numMovesFound := 0
 
-	//#ifdef _DEBUG
-	if puz.logFile {
+	if debug && puz.logFile {
 		puz.clog.WriteString("sub getAllLegalMoves\n")
 		outputStr := fmt.Sprintf("Depth = %d\n", theGameState.depth)
 		puz.clog.WriteString(outputStr)
 	}
-	//#endif
 
 	for i := 0; i < xDim; i++ {
 		for j := 0; j < yDim; j++ {
@@ -194,17 +193,14 @@ func (puz *Puzzle) getAllLegalMoves(theGameState GameState) int {
 	}
 
 	if numMovesFound == 0 {
-		//#ifdef _DEBUG
-		if puz.logFile {
+		if debug && puz.logFile {
 			puz.clog.WriteString("No moves available\n\n")
 		}
-		//#endif
 		return puz.numBlankSquares
 	}
 
-	//#ifdef _DEBUG
 	// Print out the available moves generated.
-	if puz.logFile {
+	if debug && puz.logFile {
 		puz.clog.WriteString("Availables are: \n")
 		iIndex := 0
 		for i := 0; i < puz.numBlankSquares; i++ {
@@ -219,8 +215,6 @@ func (puz *Puzzle) getAllLegalMoves(theGameState GameState) int {
 		outputStr := fmt.Sprintf("\nNum blank squares = %d\n\n", puz.numBlankSquares)
 		puz.clog.WriteString(outputStr)
 	}
-
-	//#endif
 
 	return puz.numBlankSquares
 
@@ -326,8 +320,6 @@ func (puz *Puzzle) testSolution() bool {
 		}
 	}
 
-	// I haven't put an #ifdef _DEBUG statement around thes next 2 lines because a) They are normally
-	// never executed and b) If we do find a solution, want to know about it in all cases.
 	if puz.logFile {
 		puz.clog.WriteString("Solution found.\n")
 	}
@@ -346,36 +338,30 @@ func (puz *Puzzle) addNextAvailable(blankSquareNum int) (bool, int) {
 		return false, blankSquareNum
 	}
 
-	//#ifdef _DEBUG
-	if puz.logFile {
+	if debug && puz.logFile {
 		outputStr := fmt.Sprintf("\nEntering sub AddNextAvailable. Square no. %d, available no. %d.\n",
 			blankSquareNum, puz.numberOfAvailablesCopy[blankSquareNum])
 		puz.clog.WriteString(outputStr)
 	}
-	//#endif
 
 	// Update the  world data structures
 	if puz.numberOfAvailablesCopy[blankSquareNum] > 0 {
 		iNextAvailable := puz.numberOfAvailablesCopy[blankSquareNum] - 1
 		iXCoord := puz.availables[blankSquareNum][iNextAvailable].xCoord
 		iYCoord := puz.availables[blankSquareNum][iNextAvailable].yCoord
-		//#ifdef _DEBUG
-		if puz.logFile {
+		if debug && puz.logFile {
 			outputStr := fmt.Sprintf("Trying to add: Value %d in (%d,%d).\n",
 				puz.availables[blankSquareNum][iNextAvailable].newValue, iXCoord, iYCoord)
 			puz.clog.WriteString(outputStr)
 		}
-		//#endif
 		if puz.boardIsLegal(puz.availables[blankSquareNum][iNextAvailable].newValue, iXCoord, iYCoord) {
 			puz.world[iXCoord][iYCoord] = puz.availables[blankSquareNum][iNextAvailable].newValue
 			puz.gameStatesTriedCount++
-			//#ifdef _DEBUG
-			if puz.logFile {
+			if debug && puz.logFile {
 				outputStr := fmt.Sprintf("Added move: Value %d in (%d,%d).\n",
 					puz.availables[blankSquareNum][iNextAvailable].newValue, iXCoord, iYCoord)
 				puz.clog.WriteString(outputStr)
 			}
-			//#endif
 			// Throw this available away as we have used it.
 			puz.numberOfAvailablesCopy[blankSquareNum]--
 			// Move on to the next blank square.
@@ -383,20 +369,16 @@ func (puz *Puzzle) addNextAvailable(blankSquareNum int) (bool, int) {
 			return true, blankSquareNum
 		}
 
-		//#ifdef _DEBUG
-		if puz.logFile {
+		if debug && puz.logFile {
 			puz.clog.WriteString("Available not added as it is an illegal move.\n")
 		}
-		//#endif
 		return false, blankSquareNum
 
 	}
 
-	//#ifdef _DEBUG
-	if puz.logFile {
+	if debug && puz.logFile {
 		puz.clog.WriteString("No moves to add.\n")
 	}
-	//#endif
 	return false, blankSquareNum
 
 } // AddNextAvailable
@@ -409,31 +391,25 @@ func (puz *Puzzle) removeAvailable(blankSquareNum int) int {
 	iXCoord := puz.blankSquareCoords[blankSquareNum].x
 	iYCoord := puz.blankSquareCoords[blankSquareNum].y
 
-	//#ifdef _DEBUG
-	if puz.logFile {
+	if debug && puz.logFile {
 		outputStr := fmt.Sprintf("Entering sub RemoveAvailable. Square no. %d at (%d,%d).\n", blankSquareNum, iXCoord, iYCoord)
 		puz.clog.WriteString(outputStr)
 	}
-	//#endif
 
 	// Clear the world array
 	puz.world[iXCoord][iYCoord] = 0
 
-	//#ifdef _DEBUG
-	if puz.logFile {
+	if debug && puz.logFile {
 		outputStr := fmt.Sprintf("Removed move: Cleared (%d,%d).\n", iXCoord, iYCoord)
 		puz.clog.WriteString(outputStr)
 	}
-	//#endif
 
 	puz.numberOfAvailablesCopy[blankSquareNum]--
 	if puz.numberOfAvailablesCopy[blankSquareNum] <= 0 {
-		//#ifdef _DEBUG
-		if puz.logFile {
+		if debug && puz.logFile {
 			outputStr := fmt.Sprintf("Out of availables for square %d. Moving back to square %d.\n", blankSquareNum, blankSquareNum-1)
 			puz.clog.WriteString(outputStr)
 		}
-		//#endif
 		puz.numberOfAvailablesCopy[blankSquareNum] = puz.numberOfAvailables[blankSquareNum]
 		blankSquareNum--
 	}
@@ -462,12 +438,9 @@ func (puz *Puzzle) depthFirstSearch(startGameState *GameState) bool {
 		if ret {
 			iNextAvailable := puz.numberOfAvailablesCopy[iBlankSquareNum] - 1
 
-			// Debug.
-			//#ifdef _DEBUG
-			if puz.logFile {
+			if debug && puz.logFile {
 				puz.outputWorld(true, false)
 			}
-			//#endif
 			if puz.totalMoves%10000 == 0 {
 				puz.mainDebug(&puz.availables[iBlankSquareNum][iNextAvailable], &sw, 100) //  No. of remaining states to try?
 			}
@@ -484,11 +457,9 @@ func (puz *Puzzle) depthFirstSearch(startGameState *GameState) bool {
 
 			// Remove this available and shift onto the next one.
 			iBlankSquareNum = puz.removeAvailable(iBlankSquareNum)
-			//#ifdef _DEBUG
-			if puz.logFile {
+			if debug && puz.logFile {
 				puz.outputWorld(true, false)
 			}
-			//#endif
 			if iBlankSquareNum < 0 {
 				bFinished = true
 			}
